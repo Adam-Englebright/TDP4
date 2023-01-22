@@ -7,7 +7,7 @@
 
 // Constructor will take stepper frequency, and gpio ID numbers that are used to interface with the driver.
 // These will be used to initalise the appropriate pins as digital and PWM outputs, for control of the driver.
-Stepper::Stepper(uint step_freq, uint enable_port, uint sleep_port, uint reset_port, uint step_port, uint direction_port, uint ms1_port, uint ms2_port, uint ms3_port)
+Stepper::Stepper(uint step_freq, uint enable_port, uint reset_port, uint sleep_port, uint step_port, uint direction_port, uint ms1_port, uint ms2_port, uint ms3_port)
     // Member initalization list (excluding "slice_num", which will be assigned in the body)
     : enable{ enable_port }
     , sleep{ sleep_port }
@@ -32,8 +32,8 @@ Stepper::Stepper(uint step_freq, uint enable_port, uint sleep_port, uint reset_p
     pwm_config config = pwm_get_default_config();
 
     // Calculate divider to achieve the PWM frequency specified, using a 125MHz system clock speed,
-    // and 65536 (2**16) wrap value. For our application, the PWM frequency achieved does not need
-    // to be very precise.
+    // and 65536 (2**16) clock ticks before wrapping (65535 wrap value). 
+    // For our application, the PWM frequency achieved does not need to be very precise.
     float div = (125000000/65536)/step_freq;
     pwm_config_set_clkdiv(&config, div);
 
