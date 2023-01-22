@@ -1,5 +1,6 @@
 //#include <stdio.h>
 #include "pico/stdlib.h"
+#include "Stepper.h"
 
 int main(void)
 {  
