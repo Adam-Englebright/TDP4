@@ -1,10 +1,19 @@
-//#include <stdio.h>
 #include "pico/stdlib.h"
 #include "Stepper.h"
 
+#define STEP_FREQ 500
+#define ENABLE_PIN 28
+#define MS1_PIN 27
+#define MS2_PIN 26
+#define MS3_PIN 22
+#define RESET_PIN 21
+#define SLEEP_PIN 20
+#define STEP_PIN 19
+#define DIR_PIN 18
+
 
 // Initalise stepper control object with 100Hz step frequency.
-Stepper stepper(100, 28, 27, 26, 22, 21, 20, 19, 18);
+Stepper stepper(STEP_FREQ, ENABLE_PIN, RESET_PIN, SLEEP_PIN, STEP_PIN, DIR_PIN, MS1_PIN, MS2_PIN, MS3_PIN);
 
 
 // Create callback function that will handle interupts from GPIO button inputs.
