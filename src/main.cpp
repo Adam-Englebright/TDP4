@@ -10,23 +10,21 @@
 #define SLEEP_PIN 20
 #define STEP_PIN 19
 #define DIR_PIN 18
+#define COUNTER_PIN 17
 
 
-// Initalise stepper control object with 100Hz step frequency.
-Stepper stepper(STEP_FREQ, ENABLE_PIN, RESET_PIN, SLEEP_PIN, STEP_PIN, DIR_PIN, MS1_PIN, MS2_PIN, MS3_PIN);
+// Initalise stepper control object.
+Stepper stepper(STEP_FREQ, ENABLE_PIN, RESET_PIN, SLEEP_PIN, STEP_PIN, DIR_PIN, MS1_PIN, MS2_PIN, MS3_PIN, COUNTER_PIN);
 
 
 // Create callback function that will handle interupts from GPIO button inputs.
 void gpio_callback(uint gpio, uint32_t events)
 {
     if (gpio == 0 && events == GPIO_IRQ_EDGE_RISE) {
-        stepper.forward();
+        stepper.forward_by(500);
     }
     else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
-        stepper.backward();
-    }
-    else {
-        stepper.stop();
+        stepper.backward_by(500);
     }
 }
 
@@ -44,8 +42,8 @@ int main(void)
 
 
     // Set up interupts on the two input pins for rising and falling edges.
-    gpio_set_irq_enabled_with_callback(0, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
-    gpio_set_irq_enabled(1, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+    gpio_set_irq_enabled_with_callback(0, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
+    gpio_set_irq_enabled(1, GPIO_IRQ_EDGE_RISE, true);
 
 
     // Loop forever.
