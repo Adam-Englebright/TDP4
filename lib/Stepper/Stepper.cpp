@@ -150,7 +150,7 @@ Stepper::Stepper(uint step_freq, uint enable_port, uint reset_port, uint sleep_p
 // The forward() method will set the direction and step PWM pins to move the actuator forwards.
 void Stepper::forward(void)
 {
-    gpio_put(dir, 1);
+    gpio_put(dir, 0);
     pwm_set_enabled(slice_num, true);
 }
 
@@ -158,7 +158,7 @@ void Stepper::forward(void)
 // The backward() method will set the direction and step PWM pins to move the actuator backwards.
 void Stepper::backward(void)
 {
-    gpio_put(dir, 0);
+    gpio_put(dir, 1);
     pwm_set_enabled(slice_num, true);
 }
 
@@ -173,7 +173,7 @@ void Stepper::stop(void)
 // The forward_by() will move actuator forwards by a specified number of steps.
 void Stepper::forward_by(uint steps)
 {
-    gpio_put(dir, 1);
+    gpio_put(dir, 0);
     pwm_set_wrap(slice_num_counter, steps-1);
     pwm_set_enabled(slice_num_counter, true);
     pwm_set_enabled(slice_num, true);
@@ -183,7 +183,7 @@ void Stepper::forward_by(uint steps)
 // The backward_by() will move actuator backward by a specified number of steps.
 void Stepper::backward_by(uint steps)
 {
-    gpio_put(dir, 0);
+    gpio_put(dir, 1);
     pwm_set_wrap(slice_num_counter, steps-1);
     pwm_set_enabled(slice_num_counter, true);
     pwm_set_enabled(slice_num, true);
