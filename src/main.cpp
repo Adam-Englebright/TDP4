@@ -1,5 +1,6 @@
 #include "pico/stdlib.h"
 #include "Stepper.h"
+#include "Wire.h"
 
 #define STEP_FREQ 15
 #define ENABLE_PIN 28
@@ -16,28 +17,69 @@
 #define LED2_PIN 14
 
 
-// Initalise stepper control object.
-Stepper stepper(STEP_FREQ, ENABLE_PIN, RESET_PIN, SLEEP_PIN, STEP_PIN, DIR_PIN, MS1_PIN, MS2_PIN, MS3_PIN, COUNTER_PIN);
+// Function to be called when I2C transmission is recieved.
+void receiveEvent(int howMany)
+{
+    gpio_put(LED1_PIN,0);
+    gpio_put(LED2_PIN,1);
+    
+    char buf[howMany];
 
+    // Read data transmitted.
+    for (int i=0; i<howMany; i++) {
+        buf[i] = Wire.read();
+    }
+
+    // Set LEDs according to data sent.
+    if (buf[0] == 0) {
+        gpio_put(LED1_PIN,0);
+        gpio_put(LED2_PIN,1);
+    }
+    else if (buf[0] == 1) {
+        gpio_put(LED1_PIN,1);
+        gpio_put(LED2_PIN,0);
+    }
+    else if (buf[0] == 2) {
+        gpio_put(LED1_PIN,1);
+        gpio_put(LED2_PIN,1);
+    }
+    else {
+        gpio_put(LED1_PIN,0);
+        gpio_put(LED2_PIN,0);
+    }
+}
 
 // Create callback function that will handle interupts from GPIO button inputs.
 void gpio_callback(uint gpio, uint32_t events)
 {
     if (gpio == 0 && events == GPIO_IRQ_EDGE_RISE) {
-        stepper.forward_by(15);
+        gpio_put(LED1_PIN,0);
+        gpio_put(LED2_PIN,1);
+        Wire1.beginTransmission(8);
+        Wire1.write((uint8_t)0);
+        Wire1.endTransmission();
     }
     else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
-        stepper.backward_by(15);
+        gpio_put(LED1_PIN,1);
+        gpio_put(LED2_PIN,0);
+        Wire1.beginTransmission(8);
+        Wire1.write((uint8_t)1);
+        Wire1.endTransmission();
     }
     else if (gpio == 13 && events == GPIO_IRQ_EDGE_RISE) {
         gpio_put(LED1_PIN,0);
-        gpio_put(LED2_PIN,1);
-    }
-    else if (gpio == 13 && events == GPIO_IRQ_EDGE_FALL) {
-        gpio_put(LED1_PIN,1);
         gpio_put(LED2_PIN,0);
+        Wire1.beginTransmission(8);
+        Wire1.write((uint8_t)2);
+        Wire1.endTransmission();
     }
 }
+
+
+
+
+// Initalise stepper control object.
+Stepper stepper(STEP_FREQ, ENABLE_PIN, RESET_PIN, SLEEP_PIN, STEP_PIN, DIR_PIN, MS1_PIN, MS2_PIN, MS3_PIN, COUNTER_PIN);
 
 
 int main(void)
@@ -65,12 +107,31 @@ int main(void)
     gpio_put(LED2_PIN, 0);
 
 
+    // Set up I2C.
+    Wire.begin(6, 7, 8);  // SDA, SCL, Address
+    Wire1.begin(4, 5, 9);
+
+    Wire.onReceive(receiveEvent);
+
+
     // Set up interupts on the button inputs.
     gpio_set_irq_enabled_with_callback(0, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
     gpio_set_irq_enabled(1, GPIO_IRQ_EDGE_RISE, true);
-    gpio_set_irq_enabled(13, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+    gpio_set_irq_enabled(13, GPIO_IRQ_EDGE_RISE, true);
 
 
     // Loop forever.
-    while (true);
+    while (true) {
+        Wire1.beginTransmission(8);
+        Wire1.write((uint8_t)0);
+        Wire1.endTransmission();
+        sleep_ms(1000);
+        Wire1.beginTransmission(8);
+        Wire1.write((uint8_t)1);
+        Wire1.endTransmission();
+        sleep_ms(1000);
+        Wire1.beginTransmission(8);
+        Wire1.write((uint8_t)2);
+        Wire1.endTransmission();
+    };
 }
