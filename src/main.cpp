@@ -17,10 +17,10 @@
 #define LED1_PIN 15
 #define LED2_PIN 14
 
-#define GPIO_SDA0 6
-#define GPIO_SCL0 7
-#define GPIO_SDA1 4
-#define GPIO_SCL1 5
+#define GPIO_SDA0 4
+#define GPIO_SCL0 5
+#define GPIO_SDA1 2
+#define GPIO_SCL1 3
 #define SLAVE_ADDR 52
 
 
@@ -42,7 +42,7 @@ void i2c0_irq_handler()
     }
     else if (buf[0] == 1) {
         gpio_put(LED1_PIN,1);
-        gpio_put(LED2_PIN,1);
+        gpio_put(LED2_PIN,0);
     }
     else if (buf[0] == 2) {
         gpio_put(LED1_PIN,1);
@@ -63,19 +63,19 @@ void gpio_callback(uint gpio, uint32_t events)
     if (gpio == 0 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 1\n");
         const uint8_t data[] = {0};
-        int return_val = i2c_write_blocking(i2c0, SLAVE_ADDR, data, sizeof(data), false);
+        int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
     else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 2\n");
         const uint8_t data[] = {1};
-        int return_val = i2c_write_blocking(i2c0, SLAVE_ADDR, data, sizeof(data), false);
+        int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
     else if (gpio == 13 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 3\n");
         const uint8_t data[] = {2};
-        int return_val = i2c_write_blocking(i2c0, SLAVE_ADDR, data, sizeof(data), false);
+        int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
 }
@@ -115,13 +115,13 @@ int main(void)
     gpio_put(LED2_PIN, 0);
 
 
-    /*// Set up I2C0 as slave.
+    // Set up I2C0 as slave.
     i2c_init(i2c0, 100000);
     i2c_set_slave_mode(i2c0, true, SLAVE_ADDR);
     gpio_set_function(GPIO_SDA0, GPIO_FUNC_I2C);
     gpio_set_function(GPIO_SCL0, GPIO_FUNC_I2C);
-    //gpio_pull_up(GPIO_SDA0);
-    //gpio_pull_up(GPIO_SCL0);
+    gpio_pull_up(GPIO_SDA0);
+    gpio_pull_up(GPIO_SCL0);
 
     // Enable the I2C interrupts we want to process.
     i2c0->hw->intr_mask = I2C_IC_INTR_MASK_M_STOP_DET_BITS;
@@ -130,15 +130,15 @@ int main(void)
     irq_set_exclusive_handler(I2C0_IRQ, &i2c0_irq_handler);
 
     // Enable I2C interrupt.
-    irq_set_enabled(I2C0_IRQ, true);*/
+    irq_set_enabled(I2C0_IRQ, true);
 
 
     // set up I2C1 as master.
-    i2c_init(i2c0, 100000);
-    gpio_set_function(GPIO_SDA0, GPIO_FUNC_I2C);
-    gpio_set_function(GPIO_SCL0, GPIO_FUNC_I2C);
-    gpio_pull_up(GPIO_SDA0);
-    gpio_pull_up(GPIO_SCL0);
+    i2c_init(i2c1, 100000);
+    gpio_set_function(GPIO_SDA1, GPIO_FUNC_I2C);
+    gpio_set_function(GPIO_SCL1, GPIO_FUNC_I2C);
+    gpio_pull_up(GPIO_SDA1);
+    gpio_pull_up(GPIO_SCL1);
 
 
     // Set up interupts on the button inputs.
