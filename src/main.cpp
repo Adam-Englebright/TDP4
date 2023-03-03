@@ -1,6 +1,7 @@
 #include "pico/stdlib.h"
 #include "Stepper.h"
 #include "hardware/i2c.h"
+#include <string.h>
 #include <stdio.h>
 
 #define STEP_FREQ 15
@@ -22,6 +23,7 @@
 #define GPIO_SDA1 2
 #define GPIO_SCL1 3
 #define SLAVE_ADDR 52
+#define Z_ADDR 56
 
 
 // Function to be called when I2C transmission is recieved.
@@ -62,19 +64,31 @@ void gpio_callback(uint gpio, uint32_t events)
 {
     if (gpio == 0 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 1\n");
-        const uint8_t data[] = {0};
+        int32_t no_steps = 1000;
+        uint8_t data[sizeof(no_steps)+1];
+        data[0] = 0;  // Header
+        memcpy(&data[1], &no_steps, sizeof(no_steps));
+        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_steps, data[1], data[2], data[3], data[4], data[0]);
         int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
     else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 2\n");
-        const uint8_t data[] = {1};
+        int32_t no_steps = -1000;
+        uint8_t data[sizeof(no_steps)+1];
+        data[0] = 1;  // Header
+        memcpy(&data[1], &no_steps, sizeof(no_steps));
+        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_steps, data[1], data[2], data[3], data[4], data[0]);
         int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
     else if (gpio == 13 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 3\n");
-        const uint8_t data[] = {2};
+        int32_t no_steps = 2000;
+        uint8_t data[sizeof(no_steps)+1];
+        data[0] = 2;  // Header
+        memcpy(&data[1], &no_steps, sizeof(no_steps));
+        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_steps, data[1], data[2], data[3], data[4], data[0]);
         int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
@@ -123,8 +137,14 @@ int main(void)
     gpio_pull_up(GPIO_SDA0);
     gpio_pull_up(GPIO_SCL0);
 
-    // Enable the I2C interrupts we want to process.
+
+    // Enable the I2C interrupts we want to process. Interrupt on stop signal.
     i2c0->hw->intr_mask = I2C_IC_INTR_MASK_M_STOP_DET_BITS;
+
+    // Only interrupt if we are addressed.
+    i2c0->hw->enable = 0;
+    hw_set_bits(&i2c0->hw->con, I2C_IC_CON_STOP_DET_IFADDRESSED_BITS);
+    i2c0->hw->enable = 1;
 
     // Set up the interrupt handler to service I2C interrupts.
     irq_set_exclusive_handler(I2C0_IRQ, &i2c0_irq_handler);
@@ -148,27 +168,8 @@ int main(void)
 
 
     // Loop forever.
-    uint8_t data[] = {0};
-    int return_val;
     while (true) {
         printf("In the loop...\n");
         sleep_ms(1000);
-        /*sleep_ms(5000);
-        printf("Writing 0\n");
-        data[0] = 0;
-        return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
-        printf("Return value is %d\n", return_val);
-        sleep_ms(1000);
-
-        printf("Writing 1\n");
-        data[0] = 1;
-        return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
-        printf("Return value is %d\n", return_val);
-        sleep_ms(1000);
-
-        printf("Writing 2\n");
-        data[0] = 2;
-        return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
-        printf("Return value is %d\n", return_val);*/
     };
 }
