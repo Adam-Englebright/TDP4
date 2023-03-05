@@ -25,6 +25,7 @@
 #define SLAVE_ADDR 52
 #define Z_ADDR 56
 
+bool z_arm_in_position = true;
 
 // Function to be called when I2C transmission is recieved.
 void i2c0_irq_handler()
@@ -62,6 +63,7 @@ void i2c0_irq_handler()
 // Create callback function that will handle interupts from GPIO button inputs.
 void gpio_callback(uint gpio, uint32_t events)
 {
+    z_arm_in_position = false;
     if (gpio == 0 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 1\n");
         int32_t no_steps = 1000;
@@ -167,9 +169,24 @@ int main(void)
     gpio_set_irq_enabled(13, GPIO_IRQ_EDGE_RISE, true);
 
 
+    uint8_t z_response_data[1];
+
     // Loop forever.
     while (true) {
-        printf("In the loop...\n");
-        sleep_ms(1000);
-    };
+        if (z_arm_in_position) {
+            printf("In the loop...\n");
+            sleep_ms(500);
+        } else {
+            i2c_read_blocking(i2c1, Z_ADDR, z_response_data, sizeof(z_response_data), false);
+            if (z_response_data[0] == 0) {
+                printf("Z arm not in position\n");
+            } else if (z_response_data[0] == 1){
+                printf("Z arm is now in position!\n");
+                z_arm_in_position = true;
+            } else {
+                printf("Something's not right\n");
+            }
+            sleep_ms(250);
+        }
+    }
 }
