@@ -66,32 +66,32 @@ void gpio_callback(uint gpio, uint32_t events)
     z_arm_in_position = false;
     if (gpio == 0 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 1\n");
-        int32_t no_steps = 1000;
-        uint8_t data[sizeof(no_steps)+1];
+        int32_t no_microns = 10000;
+        uint8_t data[sizeof(no_microns)+1];
         data[0] = 0;  // Header
-        memcpy(&data[1], &no_steps, sizeof(no_steps));
-        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_steps, data[1], data[2], data[3], data[4], data[0]);
-        int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
+        memcpy(&data[1], &no_microns, sizeof(no_microns));
+        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_microns, data[1], data[2], data[3], data[4], data[0]);
+        int return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
     else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 2\n");
-        int32_t no_steps = -1000;
-        uint8_t data[sizeof(no_steps)+1];
+        int32_t no_microns = -10000;
+        uint8_t data[sizeof(no_microns)+1];
         data[0] = 1;  // Header
-        memcpy(&data[1], &no_steps, sizeof(no_steps));
-        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_steps, data[1], data[2], data[3], data[4], data[0]);
-        int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
+        memcpy(&data[1], &no_microns, sizeof(no_microns));
+        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_microns, data[1], data[2], data[3], data[4], data[0]);
+        int return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
     else if (gpio == 13 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 3\n");
-        int32_t no_steps = 2000;
-        uint8_t data[sizeof(no_steps)+1];
+        int32_t no_microns = 5000;
+        uint8_t data[sizeof(no_microns)+1];
         data[0] = 2;  // Header
-        memcpy(&data[1], &no_steps, sizeof(no_steps));
-        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_steps, data[1], data[2], data[3], data[4], data[0]);
-        int return_val = i2c_write_blocking(i2c1, SLAVE_ADDR, data, sizeof(data), false);
+        memcpy(&data[1], &no_microns, sizeof(no_microns));
+        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_microns, data[1], data[2], data[3], data[4], data[0]);
+        int return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
         printf("Return value is %d\n", return_val);
     }
 }
