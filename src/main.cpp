@@ -26,6 +26,8 @@
 #define Z_ADDR 56
 
 bool z_arm_in_position = true;
+bool start_z_test = false;
+
 
 // Function to be called when I2C transmission is recieved.
 void i2c0_irq_handler()
@@ -60,43 +62,23 @@ void i2c0_irq_handler()
     i2c0->hw->clr_stop_det;
 }
 
+
 // Create callback function that will handle interupts from GPIO button inputs.
 void gpio_callback(uint gpio, uint32_t events)
 {
-    z_arm_in_position = false;
     if (gpio == 0 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 1\n");
-        int32_t no_microns = 10000;
-        uint8_t data[sizeof(no_microns)+1];
-        data[0] = 0;  // Header
-        memcpy(&data[1], &no_microns, sizeof(no_microns));
-        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_microns, data[1], data[2], data[3], data[4], data[0]);
-        int return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
-        printf("Return value is %d\n", return_val);
-    }
-    else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
+        start_z_test = true;
+    } else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 2\n");
-        int32_t no_microns = -10000;
-        uint8_t data[sizeof(no_microns)+1];
-        data[0] = 1;  // Header
-        memcpy(&data[1], &no_microns, sizeof(no_microns));
-        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_microns, data[1], data[2], data[3], data[4], data[0]);
-        int return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
-        printf("Return value is %d\n", return_val);
-    }
-    else if (gpio == 13 && events == GPIO_IRQ_EDGE_RISE) {
+        gpio_put(LED1_PIN, 1);
+        gpio_put(LED2_PIN, 1);
+    } else if (gpio == 13 && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 3\n");
-        int32_t no_microns = 5000;
-        uint8_t data[sizeof(no_microns)+1];
-        data[0] = 2;  // Header
-        memcpy(&data[1], &no_microns, sizeof(no_microns));
-        printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", no_microns, data[1], data[2], data[3], data[4], data[0]);
-        int return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
-        printf("Return value is %d\n", return_val);
+        gpio_put(LED1_PIN, 0);
+        gpio_put(LED2_PIN, 0);
     }
 }
-
-
 
 
 // Initalise stepper control object.
@@ -120,6 +102,10 @@ int main(void)
     gpio_init(13);
     gpio_set_dir(13, GPIO_IN);
     gpio_pull_down(13);
+
+    gpio_init(16);
+    gpio_set_dir(16, GPIO_IN);
+    gpio_pull_down(16);
 
     // Set up GPIO outputs for LEDs, off by default.
     gpio_init(LED1_PIN);
@@ -168,15 +154,26 @@ int main(void)
     gpio_set_irq_enabled(1, GPIO_IRQ_EDGE_RISE, true);
     gpio_set_irq_enabled(13, GPIO_IRQ_EDGE_RISE, true);
 
-
-    uint8_t z_response_data[1];
+    uint32_t micron_pos;
+    uint8_t data[sizeof(micron_pos)+1];
+    data[0] = 0;  // Header
+    uint8_t z_response_data[1] = {2};
+    int return_val;
 
     // Loop forever.
     while (true) {
-        if (z_arm_in_position) {
-            printf("In the loop...\n");
-            sleep_ms(500);
-        } else {
+        printf("Working...\n");
+        sleep_ms(1000);
+        if (start_z_test) {
+            printf("Z test started\n");
+
+            micron_pos = 20000;
+            memcpy(&data[1], &micron_pos, sizeof(micron_pos));
+            printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", micron_pos, data[1], data[2], data[3], data[4], data[0]);
+            return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
+            printf("Return value is %d\n", return_val);
+            z_arm_in_position = false;
+
             i2c_read_blocking(i2c1, Z_ADDR, z_response_data, sizeof(z_response_data), false);
             if (z_response_data[0] == 0) {
                 printf("Z arm not in position\n");
@@ -186,7 +183,29 @@ int main(void)
             } else {
                 printf("Something's not right\n");
             }
-            sleep_ms(250);
+
+            sleep_ms(2000);
+
+            micron_pos = 0;
+            memcpy(&data[1], &micron_pos, sizeof(micron_pos));
+            printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", micron_pos, data[1], data[2], data[3], data[4], data[0]);
+            return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
+            printf("Return value is %d\n", return_val);
+            z_arm_in_position = false;
+
+            i2c_read_blocking(i2c1, Z_ADDR, z_response_data, sizeof(z_response_data), false);
+            if (z_response_data[0] == 0) {
+                printf("Z arm not in position\n");
+            } else if (z_response_data[0] == 1){
+                printf("Z arm is now in position!\n");
+                z_arm_in_position = true;
+            } else {
+                printf("Something's not right\n");
+            }
+
+            sleep_ms(2000);
+
+            start_z_test = false;
         }
     }
 }
