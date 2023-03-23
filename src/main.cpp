@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define STEP_FREQ 15
+#define STEP_FREQ 100
 #define ENABLE_PIN 28
 #define MS1_PIN 27
 #define MS2_PIN 26
@@ -27,6 +27,10 @@
 
 bool z_arm_in_position = true;
 bool start_z_test = false;
+
+
+// Initalise stepper control object.
+Stepper stepper(STEP_FREQ, ENABLE_PIN, RESET_PIN, SLEEP_PIN, STEP_PIN, DIR_PIN, MS1_PIN, MS2_PIN, MS3_PIN, COUNTER_PIN);
 
 
 // Function to be called when I2C transmission is recieved.
@@ -67,22 +71,30 @@ void i2c0_irq_handler()
 void gpio_callback(uint gpio, uint32_t events)
 {
     if (gpio == 0 && events == GPIO_IRQ_EDGE_RISE) {
+        stepper.forward();
         printf("Pressing button 1\n");
-        start_z_test = true;
-    } else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
-        printf("Pressing button 2\n");
         gpio_put(LED1_PIN, 1);
-        gpio_put(LED2_PIN, 1);
-    } else if (gpio == 13 && events == GPIO_IRQ_EDGE_RISE) {
-        printf("Pressing button 3\n");
+        gpio_put(LED2_PIN, 0);
+    } else if (gpio == 0 && events == GPIO_IRQ_EDGE_FALL) {
+        stepper.stop();
+        printf("Releasing button 1\n");
         gpio_put(LED1_PIN, 0);
         gpio_put(LED2_PIN, 0);
+    } else if (gpio == 1 && events == GPIO_IRQ_EDGE_RISE) {
+        stepper.backward();
+        printf("Pressing button 2\n");
+        gpio_put(LED1_PIN, 0);
+        gpio_put(LED2_PIN, 1);
+    } else if (gpio == 1 && events == GPIO_IRQ_EDGE_FALL) {
+        stepper.stop();
+        printf("Releasing button 2\n");
+        gpio_put(LED1_PIN, 0);
+        gpio_put(LED2_PIN, 0);
+    } else if (gpio == 13 && events == GPIO_IRQ_EDGE_RISE) {
+        printf("Pressing button 3\n");
+        start_z_test = true;
     }
 }
-
-
-// Initalise stepper control object.
-Stepper stepper(STEP_FREQ, ENABLE_PIN, RESET_PIN, SLEEP_PIN, STEP_PIN, DIR_PIN, MS1_PIN, MS2_PIN, MS3_PIN, COUNTER_PIN);
 
 
 int main(void)
@@ -150,8 +162,8 @@ int main(void)
 
 
     // Set up interupts on the button inputs.
-    gpio_set_irq_enabled_with_callback(0, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
-    gpio_set_irq_enabled(1, GPIO_IRQ_EDGE_RISE, true);
+    gpio_set_irq_enabled_with_callback(0, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+    gpio_set_irq_enabled(1, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(13, GPIO_IRQ_EDGE_RISE, true);
 
     uint32_t micron_pos;
@@ -167,7 +179,7 @@ int main(void)
         if (start_z_test) {
             printf("Z test started\n");
 
-            micron_pos = 20000;
+            micron_pos = 37000;
             memcpy(&data[1], &micron_pos, sizeof(micron_pos));
             printf("Writing %08X in chunks of %02X %02X %02X %02X, with %02X header.\n", micron_pos, data[1], data[2], data[3], data[4], data[0]);
             return_val = i2c_write_blocking(i2c1, Z_ADDR, data, sizeof(data), false);
@@ -178,8 +190,9 @@ int main(void)
             if (z_response_data[0] == 0) {
                 printf("Z arm not in position\n");
             } else if (z_response_data[0] == 1){
-                printf("Z arm is now in position!\n");
+                printf("Z arm is now in position! Applying paste\n");
                 z_arm_in_position = true;
+                stepper.forward_by(15);
             } else {
                 printf("Something's not right\n");
             }
@@ -202,8 +215,6 @@ int main(void)
             } else {
                 printf("Something's not right\n");
             }
-
-            sleep_ms(2000);
 
             start_z_test = false;
         }
