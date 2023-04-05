@@ -109,6 +109,7 @@ Stepper::Stepper(uint step_freq, uint enable_port, uint reset_port, uint sleep_p
     gpio_init(enable_port);
     gpio_set_dir(enable_port, GPIO_OUT);
     gpio_put(enable_port, 1);
+    isEnabled = false;
 
 
     // --------------- Sleep Control ---------------
@@ -194,6 +195,7 @@ void Stepper::backward_by(uint steps)
 void Stepper::enable(void)
 {
     gpio_put(enable_port, 0);  // Enable port is active low
+    isEnabled = true;
 }
 
 
@@ -201,4 +203,12 @@ void Stepper::enable(void)
 void Stepper::disable(void)
 {
     gpio_put(enable_port, 1);  // Enable port is inactive high
+    isEnabled = false;
+}
+
+
+// The is_enabled() method will return if the stepper is enabled or not.
+bool Stepper::is_enabled(void)
+{
+    return isEnabled;
 }

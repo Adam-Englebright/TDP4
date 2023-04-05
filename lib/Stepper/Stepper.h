@@ -8,6 +8,7 @@
 class Stepper
 {
     uint enable_port;
+    bool isEnabled;
     uint sleep;
     uint reset;
     uint step;
@@ -35,6 +36,8 @@ public:
     void enable(void);
     // Method to disable the driver.
     void disable(void);
+    // Method to return if the stepper is enabled or not.
+    bool is_enabled(void);
 };
 
 #endif
