@@ -7,7 +7,7 @@
 
 class Stepper
 {
-    uint enable;
+    uint enable_port;
     uint sleep;
     uint reset;
     uint step;
@@ -31,6 +31,10 @@ public:
     void forward_by(uint);
     // Method to move actuator backwards by a specified number of steps.
     void backward_by(uint);
+    // Method to enable the driver.
+    void enable(void);
+    // Method to disable the driver.
+    void disable(void);
 };
 
 #endif

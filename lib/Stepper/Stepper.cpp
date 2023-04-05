@@ -30,7 +30,7 @@ void on_pwm_wrap(void)
 Stepper::Stepper(uint step_freq, uint enable_port, uint reset_port, uint sleep_port, uint step_port, 
                  uint direction_port, uint ms1_port, uint ms2_port, uint ms3_port, uint counter_port)
     // Member initalization list (excluding "slice_num", which will be assigned in the body)
-    : enable{ enable_port }
+    : enable_port{ enable_port }
     , sleep{ sleep_port }
     , reset{ reset_port }
     , step{ step_port }
@@ -105,10 +105,10 @@ Stepper::Stepper(uint step_freq, uint enable_port, uint reset_port, uint sleep_p
 
 
     // --------------- Enable Control ---------------
-    // Set up the enable pin as a digital output. Default to output low to enable the driver.
+    // Set up the enable pin as a digital output. Default to output high to disable the driver.
     gpio_init(enable_port);
     gpio_set_dir(enable_port, GPIO_OUT);
-    gpio_put(enable_port, 0);
+    gpio_put(enable_port, 1);
 
 
     // --------------- Sleep Control ---------------
@@ -170,7 +170,7 @@ void Stepper::stop(void)
 }
 
 
-// The forward_by() will move actuator forwards by a specified number of steps.
+// The forward_by() method will move actuator forwards by a specified number of steps.
 void Stepper::forward_by(uint steps)
 {
     gpio_put(dir, 0);
@@ -180,11 +180,25 @@ void Stepper::forward_by(uint steps)
 }
 
 
-// The backward_by() will move actuator backward by a specified number of steps.
+// The backward_by() method will move actuator backward by a specified number of steps.
 void Stepper::backward_by(uint steps)
 {
     gpio_put(dir, 1);
     pwm_set_wrap(slice_num_counter, steps-1);
     pwm_set_enabled(slice_num_counter, true);
     pwm_set_enabled(slice_num, true);
+}
+
+
+// The enable() method will enable the driver.
+void Stepper::enable(void)
+{
+    gpio_put(enable_port, 0);  // Enable port is active low
+}
+
+
+// The disable() method will enable the driver.
+void Stepper::disable(void)
+{
+    gpio_put(enable_port, 1);  // Enable port is inactive high
 }
