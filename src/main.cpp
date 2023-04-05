@@ -94,14 +94,23 @@ void gpio_callback(uint gpio, uint32_t events)
         printf("Releasing button 2 to stop plunger\n");
     } else if (gpio == I2C_BUTTON && events == GPIO_IRQ_EDGE_RISE) {
         printf("Pressing button 3 to start our process\n");
-        if (currently_master) { // Should only be able to start if we have already been given mastership
+        if (currently_master && stepper.is_enabled()) { // Should only be able to start if we have already been given mastership and stepper is enabled
             printf("Start flag set.\n");
             gpio_put(LED1_PIN, 1);
             gpio_put(LED2_PIN, 0);
             start = true;
+        } else if (currently_master && !stepper.is_enabled()) {
+            printf("Connot start! Stepper is not enabled!\n");
+        } else if (!currently_master && stepper.is_enabled()) {
+            printf("Connot start! We are not master!\n");
         } else {
-            printf("Connot start! We are not master yet!\n");
+            printf("Connot start! We are not master and the stepper is not enabled!\n");
         }
+    } else if (gpio == MISC_BUTTON && events == GPIO_IRQ_EDGE_RISE) {
+        if (stepper.is_enabled())
+            stepper.disable();
+        else
+            stepper.enable();
     }
 }
 
@@ -230,6 +239,7 @@ int main(void)
     gpio_set_irq_enabled_with_callback(F_BUTTON, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
     gpio_set_irq_enabled(B_BUTTON, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(I2C_BUTTON, GPIO_IRQ_EDGE_RISE, true);
+    gpio_set_irq_enabled(MISC_BUTTON, GPIO_IRQ_EDGE_RISE, true);
 
 
     // Loop forever.
