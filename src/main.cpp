@@ -38,6 +38,9 @@
 #define Z_RISE_POS 0
 #define Z_DROP_POS 37000
 
+#define X_OFFSET 0
+#define Y_OFFSET 0
+
 bool z_arm_in_position = true;
 bool xy_arm_in_position = true;
 bool currently_master = false;
@@ -252,9 +255,9 @@ int main(void)
             // Iterate over array of xy positions for paste application.
             // Number of iterations is calculated by dividing the total number of bytes in the array by 8,
             // since each sub-array containing xy coordinates is 8 bytes in size (4 bytes for each 32 bit coordinate)
-            for (int i=0; i<(sizeof(xy_coords)/8); i++) {
+            for (int i=0; i<(sizeof(xy_coords)/sizeof(xy_coords[0])); i++) {
                 // Move XY into correct position.
-                control_xy(xy_coords[i][0], xy_coords[i][1]);
+                control_xy(xy_coords[i][0] + X_OFFSET, xy_coords[i][1] + Y_OFFSET);
 
                 // Move Z down, apply paste, move Z back up.
                 control_z(Z_DROP_POS, true);
