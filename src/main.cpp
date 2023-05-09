@@ -63,7 +63,7 @@ void i2c0_irq_handler()
     i2c_read_raw_blocking(i2c0, buf, how_many);
 
     // If handover signal is recieved, set our uC to master.
-    if (buf[0] == 0) {
+    if (buf[0] == 3) {
         currently_master = true;
         gpio_put(LED1_PIN, 0);
         gpio_put(LED2_PIN, 0);
@@ -272,7 +272,7 @@ int main(void)
 
             // Send master handover message.
             printf("Sending handover message.");
-            uint8_t handover_data[1] = {0};
+            uint8_t handover_data[1] = {3};
             i2c_write_blocking(i2c1, T3_ADDR, handover_data, sizeof(handover_data), false);
             currently_master = false;
         }
