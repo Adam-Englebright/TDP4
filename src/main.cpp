@@ -268,13 +268,15 @@ int main(void)
             // We are finished with paste application now, so reset XYZ position and handover mastership.
             printf("Finished with paste application, resetting to 0, 0, 0 XYZ\n");
             control_xy(0, 0);
-            //control_z(0, false);
+            control_z(0, false);
 
             // Send master handover message.
-            printf("Sending handover message.");
+            printf("Sending handover message.\n");
             uint8_t handover_data[1] = {3};
             i2c_write_blocking(i2c1, T3_ADDR, handover_data, sizeof(handover_data), false);
             currently_master = false;
+            gpio_put(LED1_PIN, 0);
+            gpio_put(LED2_PIN, 1);
         }
     }
 }
