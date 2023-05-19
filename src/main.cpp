@@ -35,15 +35,15 @@
 #define Z_ADDR 56
 #define CONTROL_HEADER 97
 
-#define Z_RISE_POS 0
+#define Z_RISE_POS 15000
 #define Z_DROP_POS 37000
 
-#define X_OFFSET 0
+#define X_OFFSET -3750
 #define Y_OFFSET 0
 
 bool z_arm_in_position = true;
 bool xy_arm_in_position = true;
-bool currently_master = false;
+bool currently_master = true;  // Set true for testing/demo. Should be false when properly set up.
 bool start = false;
 
 
@@ -110,10 +110,13 @@ void gpio_callback(uint gpio, uint32_t events)
             printf("Connot start! We are not master and the stepper is not enabled!\n");
         }
     } else if (gpio == MISC_BUTTON && events == GPIO_IRQ_EDGE_RISE) {
-        if (stepper.is_enabled())
+        if (stepper.is_enabled()) {
+            printf("Stepper disabled\n");
             stepper.disable();
-        else
+        } else {
+            printf("Stepper enabled\n");
             stepper.enable();
+        }
     }
 }
 
@@ -260,7 +263,7 @@ int main(void)
                 control_xy(xy_coords[i][0] + X_OFFSET, xy_coords[i][1] + Y_OFFSET);
 
                 // Move Z down, apply paste, move Z back up.
-                control_z(Z_DROP_POS, true);
+                control_z(Z_DROP_POS, true);  // False for testing.
                 sleep_ms(2000);
                 control_z(Z_RISE_POS, false);
             }
