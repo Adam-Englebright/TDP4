@@ -199,7 +199,7 @@ void Stepper::enable(void)
 }
 
 
-// The disable() method will enable the driver.
+// The disable() method will disable the driver.
 void Stepper::disable(void)
 {
     gpio_put(enable_port, 1);  // Enable port is inactive high
